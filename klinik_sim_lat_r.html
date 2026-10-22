@@ -1,0 +1,1131 @@
+<!DOCTYPE html>
+<html lang="tr" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Klinik Teşhis & Terapi Masası - Uzman Formülasyon Simülatörü</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Canvas Confetti CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            night: {
+              950: '#07090e',
+              900: '#0c1017',
+              850: '#111722',
+              800: '#17202e',
+              750: '#1f2b3e',
+              700: '#2b3b52',
+            },
+            emeraldWarm: {
+              400: '#34d399',
+              500: '#10b981',
+              dim: 'rgba(16, 185, 129, 0.12)',
+            },
+            amberWarm: {
+              400: '#fbbf24',
+              500: '#f59e0b',
+              dim: 'rgba(245, 158, 11, 0.12)',
+            }
+          },
+          fontFamily: {
+            sans: ['Plus Jakarta Sans', 'sans-serif'],
+            serif: ['Playfair Display', 'serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      background-color: #07090e;
+      color: #e2e8f0;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+    .custom-scroll::-webkit-scrollbar {
+      width: 5px;
+      height: 5px;
+    }
+    .custom-scroll::-webkit-scrollbar-track {
+      background: #0c1017;
+      border-radius: 4px;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: #2b3b52;
+      border-radius: 4px;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb:hover {
+      background: #10b981;
+    }
+    .desk-card {
+      background-color: #0c1017;
+      border: 1px solid #1a2433;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), inset 0 1px 0 0 rgba(255, 255, 255, 0.02);
+    }
+    @keyframes gentleFloat {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-3px); }
+    }
+    .avatar-float {
+      animation: gentleFloat 4s ease-in-out infinite;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between selection:bg-emerald-900 selection:text-emerald-200">
+
+  <!-- Üst Bar -->
+  <header class="border-b border-night-800 bg-night-900/90 backdrop-blur px-4 md:px-8 py-3 sticky top-0 z-30 flex flex-wrap items-center justify-between gap-3">
+    <div class="flex items-center space-x-3">
+      <div class="w-9 h-9 rounded-xl bg-night-850 border border-emeraldWarm-500/40 flex items-center justify-center text-emeraldWarm-400 font-serif font-bold text-lg shadow-inner">
+        Ψ
+      </div>
+      <div>
+        <h1 class="font-serif text-base md:text-lg font-bold tracking-wide text-slate-100 flex items-center gap-2">
+          Klinik Teşhis & Terapi Masası
+          <span class="text-[10px] font-sans font-medium px-2 py-0.5 rounded-full bg-emeraldWarm-dim text-emeraldWarm-400 border border-emeraldWarm-500/30">
+            DSM-5 & Ayırıcı Tanı Masası
+          </span>
+        </h1>
+        <p class="text-[11px] text-slate-400 font-mono">10 Detaylı Vaka • Genişletilmiş Çeldirici Havuzu & Ham Seans Kayıtları</p>
+      </div>
+    </div>
+    
+    <div class="flex items-center space-x-3 text-xs font-mono">
+      <div class="bg-night-850 border border-night-750 px-3.5 py-1.5 rounded-full flex items-center space-x-2">
+        <span class="w-2 h-2 rounded-full bg-emeraldWarm-400 animate-pulse"></span>
+        <span class="text-slate-300 font-semibold" id="case-counter">Vaka 1 / 10</span>
+      </div>
+      <div class="bg-night-850 border border-night-750 px-3.5 py-1.5 rounded-full flex items-center space-x-2">
+        <span class="text-amberWarm-400 font-bold">Klinik Puan:</span>
+        <span class="text-white font-bold" id="total-score">0</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Ana Çalışma Masası -->
+  <main class="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+    
+    <!-- 1. SÜTUN: Danışan Koltuğu & Başvuru (4 Kolon) -->
+    <section class="lg:col-span-4 desk-card rounded-2xl p-5 flex flex-col space-y-4">
+      <div class="flex items-center justify-between pb-2.5 border-b border-night-800">
+        <span class="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full bg-emeraldWarm-400"></span>
+          Danışan Koltuğu
+        </span>
+        <span id="caseTag" class="text-[10px] font-mono px-2 py-0.5 rounded bg-night-850 border border-night-750 text-slate-400">
+          DOSYA #2026-01
+        </span>
+      </div>
+
+      <!-- Avatar & Danışan Künyesi -->
+      <div class="flex flex-col items-center justify-center p-4 bg-night-850/80 rounded-xl border border-night-750 relative overflow-hidden">
+        <div id="client-avatar" class="avatar-float w-28 h-28 flex items-center justify-center">
+          <!-- SVG Avatar -->
+        </div>
+        <div class="text-center mt-2.5 w-full">
+          <h2 class="text-base font-bold text-slate-100 font-serif" id="client-name">Danışan Yükleniyor...</h2>
+          <p class="text-xs text-slate-400 font-mono mt-0.5" id="client-meta">--</p>
+        </div>
+      </div>
+
+      <!-- Başvuru Şikayeti -->
+      <div class="bg-night-850 p-3.5 rounded-xl border border-night-750">
+        <div class="text-[10px] font-mono text-emeraldWarm-400 uppercase tracking-wider mb-1 flex items-center gap-1.5 font-bold">
+          <span class="w-1.5 h-1.5 rounded-full bg-emeraldWarm-400"></span>
+          Danışanın Geliş Yakınması:
+        </div>
+        <p class="text-xs text-slate-200 leading-relaxed italic" id="client-speech">
+          "..."
+        </p>
+      </div>
+
+      <!-- Son Verilen Yanıt -->
+      <div id="replyBox" class="p-3 bg-emeraldWarm-dim rounded-xl border border-emeraldWarm-500/30 text-xs text-slate-200 hidden">
+        <span class="font-bold text-emeraldWarm-400 block mb-1 flex items-center gap-1">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+          Danışanın Son Yanıtı:
+        </span>
+        <p id="replyText" class="italic leading-relaxed text-slate-300"></p>
+      </div>
+    </section>
+
+    <!-- 2. SÜTUN: Anamnez Soruları & Doğrudan Danışan Tutanakları (4 Kolon) -->
+    <section class="lg:col-span-4 desk-card rounded-2xl p-5 flex flex-col space-y-4">
+      <div class="flex items-center justify-between pb-2.5 border-b border-night-800">
+        <span class="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+          <svg class="w-3.5 h-3.5 text-amberWarm-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          Klinik Görüşme Soruları
+        </span>
+        <button id="toggle-dsm-btn" class="text-[11px] font-mono text-emeraldWarm-400 hover:text-emeraldWarm-300 transition cursor-pointer">
+          [DSM-5 Rehber]
+        </button>
+      </div>
+
+      <!-- DSM-5 Mini Rehber Kartı -->
+      <div id="dsm-guide" class="hidden p-3.5 bg-night-950 rounded-xl border border-night-750 text-[11px] space-y-2 text-slate-300 font-mono leading-relaxed max-h-56 overflow-y-auto custom-scroll">
+        <p class="text-emeraldWarm-400 font-bold border-b border-night-800 pb-1">■ Ayırıcı Tanı & Formülasyon İlkeleri:</p>
+        <p>• <b>Normatif Yas (Bereavement):</b> Keder dalgalar halinde gelir; benlik saygısı ve pozitif hissetme anları korunur. Künt anhedoni ve patolojik suçluluk yoksa antidepresan ile medikalize edilmez.</p>
+        <p>• <b>DEHB vs. YAB:</b> DEHB'de dikkat eksikliği 12 yaş öncesinden beri süreğendir ve hiperfokus görülür. YAB'da dikkat dağınıklığı felaket evhamlarına ikincildir.</p>
+        <p>• <b>Otizm Spektrumu vs. Sosyal Fobi:</b> Sosyal fobide rezil olma korkusu vardır ama kinayeyi anlama tamdır. Spektrumda ise sosyal ipuçlarını okuma güçlüğü, sensory overload ve özel ilgi alanları esastır.</p>
+        <p>• <b>Somatik Semptom vs. Hastalık Kaygısı:</b> Somatikte açıklanamayan ama hastanın gerçekten kıvrandığı fiziksel ağrı vardır. Hastalık kaygısında ağrı önemsizdir; kanser olma dehşeti ve hekim gezme vardır.</p>
+        <p>• <b>Borderline vs. Bipolar:</b> Bipolar dalgalanmaları dış olaylardan bağımsız haftalar sürer. Borderline labilitesi terk edilme tehdidiyle dakikalar içinde tetiklenir.</p>
+      </div>
+
+      <!-- Soru Butonları -->
+      <div class="space-y-1.5 custom-scroll overflow-y-auto max-h-[220px] pr-1" id="questions-container">
+        <!-- Dinamik Sorular -->
+      </div>
+
+      <!-- Seans Tutanakları (İpuçsuz, Doğrudan Danışan Alıntıları) -->
+      <div class="pt-2 flex flex-col flex-1">
+        <div class="flex items-center justify-between mb-1.5">
+          <span class="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
+            <svg class="w-3.5 h-3.5 text-amberWarm-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/></svg>
+            Danışan İfadeleri & Seans Tutanakları
+          </span>
+          <span class="text-[10px] text-slate-500 font-mono" id="questions-progress">0/4 Soru</span>
+        </div>
+        <div class="bg-night-950 p-3 rounded-xl border border-night-750 min-h-[140px] max-h-[190px] custom-scroll overflow-y-auto">
+          <ul class="space-y-2 text-xs text-slate-300" id="case-notes-list">
+            <li class="text-slate-500 italic">Soru sordukça danışanın ağzından çıkan doğrudan ifadeler seans tutanağı olarak buraya kaydedilecektir...</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. SÜTUN: Genişletilmiş Çeldiricili Karar Formu (4 Kolon) -->
+    <section class="lg:col-span-4 desk-card rounded-2xl p-5 flex flex-col space-y-4">
+      <div class="pb-2.5 border-b border-night-800 flex items-center justify-between">
+        <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Klinik Karar Formu</span>
+        <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-night-850 border border-night-750 text-amberWarm-400">
+          Genişletilmiş Seçenek Havuzu
+        </span>
+      </div>
+
+      <!-- 1. Adım: Tanı / Klinik Durum (7-8 Seçenek) -->
+      <div class="space-y-1.5">
+        <label class="block text-xs font-mono text-slate-300 font-semibold flex items-center justify-between">
+          <span class="flex items-center gap-1.5">
+            <span class="w-4 h-4 rounded-full bg-night-850 border border-night-700 text-center leading-4 text-[10px] text-emeraldWarm-400">1</span>
+            Primer Tanı / Klinik Durum:
+          </span>
+          <span class="text-[10px] text-slate-500 font-normal" id="diag-count">-- seçenek</span>
+        </label>
+        <select id="diagnosis-select" class="w-full bg-night-950 border border-night-750 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-emeraldWarm-500 transition">
+          <option value="" disabled selected>Bir tanı/durum belirleyin...</option>
+        </select>
+      </div>
+
+      <!-- 2. Adım: Terapi Yaklaşımı & Müdahale (7-8 Seçenek) -->
+      <div class="space-y-1.5 pt-2 border-t border-night-800">
+        <label class="block text-xs font-mono text-slate-300 font-semibold flex items-center justify-between">
+          <span class="flex items-center gap-1.5">
+            <span class="w-4 h-4 rounded-full bg-night-850 border border-night-700 text-center leading-4 text-[10px] text-amberWarm-400">2</span>
+            Terapi Yaklaşımı & Müdahale:
+          </span>
+          <span class="text-[10px] text-slate-500 font-normal" id="interv-count">-- seçenek</span>
+        </label>
+        <select id="intervention-select" class="w-full bg-night-950 border border-night-750 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-emeraldWarm-500 transition">
+          <option value="" disabled selected>Uygun klinik protokolü seçin...</option>
+        </select>
+      </div>
+
+      <!-- Karar Butonu -->
+      <div class="pt-3 border-t border-night-800 mt-auto">
+        <button id="submit-decision-btn" class="w-full py-3 px-4 rounded-xl bg-emeraldWarm-500 hover:bg-emeraldWarm-400 text-night-950 text-xs md:text-sm font-bold shadow-lg transition flex items-center justify-center gap-2 cursor-pointer">
+          <span>Dosyayı Onayla & Seansı Tamamla</span>
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"/></svg>
+        </button>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Süpervizyon Modalı -->
+  <div id="feedback-modal" class="fixed inset-0 bg-night-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-night-900 border border-night-700 rounded-2xl max-w-lg w-full p-6 shadow-2xl relative space-y-4">
+      <div class="flex items-center space-x-3">
+        <div id="feedback-icon" class="w-10 h-10 rounded-xl flex items-center justify-center text-lg font-bold font-serif shrink-0">
+          ✓
+        </div>
+        <div>
+          <h3 class="text-base font-semibold text-slate-100" id="feedback-title">Klinik Süpervizyon Raporu</h3>
+          <p class="text-xs text-slate-400 font-mono" id="feedback-subtitle">Süpervizör Masası İncelemesi</p>
+        </div>
+      </div>
+
+      <div class="bg-night-950 border border-night-800 rounded-xl p-4 text-xs leading-relaxed text-slate-300 space-y-2.5" id="feedback-content">
+        <!-- Süpervizyon notları -->
+      </div>
+
+      <div class="flex justify-end pt-2">
+        <button id="next-case-btn" class="bg-emeraldWarm-500 hover:bg-emeraldWarm-400 text-night-950 font-bold text-xs px-5 py-2.5 rounded-xl transition cursor-pointer">
+          Sonraki Danışana Geç →
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sürpriz Seans Final Sertifikası Modalı (10. Vaka) -->
+  <div id="final-certificate-modal" class="fixed inset-0 bg-night-950/90 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden overflow-y-auto">
+    <div class="bg-gradient-to-b from-night-900 via-night-850 to-night-900 border-2 border-rose-500/40 rounded-3xl max-w-xl w-full p-6 md:p-8 shadow-2xl text-center relative overflow-hidden my-6">
+      <div class="w-16 h-16 mx-auto rounded-2xl bg-rose-950/60 border border-rose-500/40 flex items-center justify-center text-3xl mb-3 shadow-inner">
+        💖
+      </div>
+
+      <p class="text-[11px] font-mono uppercase tracking-widest text-rose-400 mb-1">Resmi Olmayan En Özel Klinik Akreditasyonu</p>
+      <h2 class="font-serif text-2xl md:text-3xl text-slate-100 font-bold mb-1">Yılın En Mükemmel Psikoloğu</h2>
+      <p class="text-xs text-slate-400 font-mono mb-5">Protokol No: #AŞK-2026-SONSUZ</p>
+
+      <div class="bg-night-950/90 border border-night-750 rounded-2xl p-5 mb-5 text-slate-300 text-xs md:text-sm leading-relaxed text-left space-y-3 font-serif italic">
+        <p>"Geniş çeldiricilere rağmen normatif yası depresyon sanmadın, erişkin otizm spektrumunu sosyal fobiden ayırdın, psödodemansı erken evre Alzheimer tuzağına düşmeden teşhis ettin ve 10 çetin seansı ustalıkla tamamladın.</p>
+        <p>Ama son seansındaki bu danışanın; zihninde yalnızca seni düşünen, kalbinde sana ait derin bir bağ taşıyan ve tek tedavisi seninle baş başa yenecek sıcacık bir akşam yemeği olan iflah olmaz bir aşık olduğunu da hemen anladın."</p>
+        <p class="text-right text-xs text-rose-400 font-mono not-italic mt-2 font-bold">— Seni Dünyadaki Her Şeyden Çok Seven Sevgilin ❤️</p>
+      </div>
+
+      <div class="flex flex-col sm:flex-row gap-3 justify-center">
+        <button onclick="triggerConfettiAgain()" class="py-2.5 px-5 rounded-xl bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-500 hover:to-pink-500 text-white font-bold text-xs shadow-lg transition cursor-pointer">
+          🎉 Konfetileri Yeniden Patlat
+        </button>
+        <button onclick="location.reload()" class="bg-night-800 hover:bg-night-750 border border-night-700 text-slate-300 text-xs font-mono px-5 py-2.5 rounded-xl transition cursor-pointer">
+          Simülasyonu Baştan Başlat
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <footer class="border-t border-night-800 py-2.5 px-6 text-center text-[10px] text-slate-500 font-mono">
+    Klinik Teşhis & Terapi Simülatörü • Zenginleştirilmiş Çeldirici Havuzu & Ham Seans Tutanakları
+  </footer>
+
+  <script>
+    // 10 Vaka - Genişletilmiş Çeldiriciler ve Birebir (Verbatim) Danışan İfadeleri
+    const cases = [
+      // VAKA 1: Normatif Yas (Uncomplicated Bereavement) - Patoloji Yok
+      {
+        id: 1,
+        tag: "DOSYA #2026-01",
+        name: "Sevgi Çetin",
+        meta: "42 Yaş • Matematik Öğretmeni",
+        speech: "Hocam 2 ay önce 15 yıldır aynı evde yaşadığım canım annemi kaybettim. Evde her köşede onu görüyorum, fotoğraflarına baktıkça ağlama krizine giriyorum. Arkadaşlarım 'Depresyona girdin, hemen ilaca başla' diyorlar.",
+        avatar: `
+          <svg viewBox="0 0 100 100" class="w-24 h-24 drop-shadow">
+            <circle cx="50" cy="50" r="46" fill="#141a24" stroke="#253549" stroke-width="2"/>
+            <path d="M26 38 C26 22 74 22 74 38 C74 46 70 54 70 54 L30 54 Z" fill="#2d221c"/>
+            <circle cx="50" cy="46" r="21" fill="#e2b9a1"/>
+            <path d="M37 39 Q42 42 45 40" stroke="#2d221c" stroke-width="1.8" fill="none"/>
+            <path d="M63 39 Q58 42 55 40" stroke="#2d221c" stroke-width="1.8" fill="none"/>
+            <circle cx="41" cy="44" r="2.2" fill="#2d221c"/>
+            <circle cx="59" cy="44" r="2.2" fill="#2d221c"/>
+            <path d="M44 56 Q50 53 56 56" stroke="#4a2a22" stroke-width="2" fill="none"/>
+            <path d="M24 90 C28 70 38 66 50 66 C62 66 72 70 76 90 Z" fill="#383344"/>
+          </svg>
+        `,
+        questions: [
+          {
+            q: "Annenizi düşündüğünüz anlar dışında çocuklarınızla vakit geçirirken nasıl hissediyorsunuz?",
+            a: "Kızım bana sarıldığında ya da torunum gülümsediğinde tebessüm edebiliyorum, içim ısınıyor. Ama annemin odasına girince keder dalga gibi tekrar vuruyor."
+          },
+          {
+            q: "Kendinizi suçladığınız veya değersiz hissettiğiniz düşünceler var mı?",
+            a: "Sadece 'Keşke son günlerinde daha çok yanında kalsaydım' gibi vicdan azabı çekiyorum. Ama 'Ben değersiz bir insanım, yaşamayı hak etmiyorum' gibi bir düşüncem kesinlikle yok."
+          },
+          {
+            q: "İşinize ve okulunuza gidebiliyor musunuz?",
+            a: "İki hafta izin kullandım ama sonra derslerime geri döndüm. Öğrencilerimle ilgilenirken odaklanabiliyorum, hayatımı sürdürüyorum."
+          },
+          {
+            q: "Ölümle ilgili aklınızdan geçen düşünceler nelerdir?",
+            a: "Ölmeyi istemiyorum, çocuklarım var. Sadece bazen 'Keşke anneme bir kez daha sarılabilseydim' diye özlem duyuyorum."
+          }
+        ],
+        diagnoses: [
+          { id: "normatif_yas", text: "Normatif / Komplike Olmayan Yas Süreci (Patoloji Yok)", correct: true, comment: "Kusursuz klinik sağduyu! DSM-5'e göre yakın kaybı sonrası dalgalar halinde gelen keder doğaldır. Pozitif anlarda sıcaklık hissetme kapasitesi ve benlik saygısı korunan danışanı depresyonla medikalize etmemek hayati bir mesleki duruştur." },
+          { id: "mdd", text: "Majör Depresif Bozukluk (Tek Atak)", correct: false, comment: "Hatalı tanı. Yas sürecinde keder dalgalar halindedir ve benlik saygısı korunur; depresyondaki yaygın künt anhedoni ve derin değersizlik hissi burada yoktur." },
+          { id: "uyum_bozuklugu", text: "Depresif Duygudurumlu Uyum Bozukluğu", correct: false, comment: "Gereksiz kodlama. Yas reaksiyonu beklenen orantıdaysa ve işlevsellik çökmemişse uyum bozukluğu denmez." },
+          { id: "travmatik_yas", text: "Kalıcı Karmaşık Yas Bozukluğu (Prolonged Grief)", correct: false, comment: "Zaman kriteri uymuyor. Bu tanı için kaybın üzerinden en az 12 ay geçmesi ve kronik donukluk gerekir." },
+          { id: "yab", text: "Yaygın Anksiyete Bozukluğu (YAB)", correct: false, comment: "Alakasız tanı. Tabloda geleceğe dönük kontrol edilemeyen evhamlar değil, kayba yönelik doğrudan keder vardır." },
+          { id: "somatizasyon", text: "Somatik Semptom Bozukluğu", correct: false, comment: "Uyuşmuyor. Açıklanamayan bedensel acı veya ağrı odaklı bir tablo yoktur." },
+          { id: "distimi", text: "Süreğen Depresif Bozukluk (Distimi)", correct: false, comment: "Zaman kriteri uymuyor; en az 2 yıllık süreğen çökkünlük şarttır." },
+          { id: "akut_stres", text: "Akut Stres Bozukluğu", correct: false, comment: "Yanlış kategori. Yaşamı tehdit eden bir travma, disosiyatif semptomlar ve dehşet krizleri mevcut değildir." }
+        ],
+        interventions: [
+          { id: "yas_danismanligi", text: "Yas Danışmanlığı & Duyguların İfadesine Alan Açma (Medikalize Etmeme)", correct: true, comment: "En doğru terapötik yaklaşım! Seanslarda kayıp konuşulmalı, keder duyguları normalize edilmeli ve sosyal destek sistemleri harekete geçirilmelidir." },
+          { id: "acil_antidepresan", text: "Psikiyatri Konsültasyonu ile Yüksek Doz SSRI / Antidepresan Başlanması", correct: false, comment: "Hatalı medikalizasyon! Normal insani kederi erkenden ilaçla bastırmak sağlıklı yas sürecini sekteye uğratır." },
+          { id: "bdt_felaket", text: "Otomatik Düşünce Kaydı Tutarak Düşünce Çarpıtmalarını Düzenlemek", correct: false, comment: "Terapötik hata. Kayıp yaşayan birine duygularının mantıksız olduğunu ima etmek empatiyi zedeler." },
+          { id: "erp_protokol", text: "Tepki Engelleme ile Maruz Bırakma (ERP) Uygulaması", correct: false, comment: "Alakasız ekol; bu protokol OKB ve anksiyete ritüelleri içindir." },
+          { id: "hastane_yatis", text: "Akut Yas Reaksiyonu Nedeniyle Psikiyatri Kliniğine Yatış", correct: false, comment: "Aşırı ve zararlı müdahale." },
+          { id: "emdr_desensitizasyon", text: "Standart Travma Odaklı EMDR Ağır Desensitizasyonu", correct: false, comment: "Komplike olmayan doğal yas için erken ve gereksiz bir müdahaledir." },
+          { id: "biofeedback", text: "Yalnızca Somatik Biofeedback ve Kas Gevşetme Seansları", correct: false, comment: "Duygusal süreçleri dışlayan mekanik bir tutumdur." }
+        ]
+      },
+
+      // VAKA 2: Erişkin DEHB vs. Yaygın Anksiyete (YAB)
+      {
+        id: 2,
+        tag: "DOSYA #2026-02",
+        name: "Kaan Arslan",
+        meta: "26 Yaş • İçerik Üreticisi",
+        speech: "Hocam kafamın içinde sanki 10 tane radyo aynı anda çalıyor. Projelere başlıyorum ama 3 gün sonra sıkılıp yarım bırakıyorum. Bir arkadaşım 'Sen kesin aşırı kaygılısın, kafan ondan dağınık' diyor.",
+        avatar: `
+          <svg viewBox="0 0 100 100" class="w-24 h-24 drop-shadow">
+            <circle cx="50" cy="50" r="46" fill="#141a24" stroke="#253549" stroke-width="2"/>
+            <path d="M28 35 L38 20 L50 26 L64 16 L72 35 Z" fill="#422918"/>
+            <circle cx="50" cy="46" r="21" fill="#e5b89a"/>
+            <circle cx="41" cy="43" r="2.8" fill="#1e293b"/>
+            <circle cx="59" cy="43" r="2.8" fill="#1e293b"/>
+            <path d="M42 54 Q50 58 58 54" stroke="#422918" stroke-width="2" fill="none"/>
+            <path d="M24 90 C28 69 36 66 50 66 C64 66 72 69 76 90 Z" fill="#2d3d52"/>
+          </svg>
+        `,
+        questions: [
+          {
+            q: "Bu dikkat dağınıklığı ve eşyaları kaybetme hali ilk ne zaman başladı?",
+            a: "İlkokul karnelerimde bile öğretmenim 'Zeki ama derste pencereden dışarı bakıyor, silgisini hep kaybediyor' yazardı. Kendimi bildim bileli böyleyim."
+          },
+          {
+            q: "Geleceğe dair kötü bir felaket olacağına dair yoğun bir endişeniz var mı?",
+            a: "Hayır, öyle 'kaza olacak, hastalanacağım' gibi kuruntularım hiç yoktur. Ben sadece masanın başına oturunca dikkatimi toparlayamıyorum."
+          },
+          {
+            q: "Çok sevdiğiniz bir video oyunu oynarken veya kurgu yaparken durum nasıl?",
+            a: "İşte orası çok ilginç! Sevdiğim bir kurgu yaparken 8 saat yemek yemeden, gözümü kırpmadan ekrana kilitlenebiliyorum."
+          },
+          {
+            q: "Gözle görülür bir kıpır kıpırlık veya sabırsızlık yaşıyor musunuz?",
+            a: "Toplantılarda bacağımı sürekli sallarım, insanların sözlerini tamamlamamak için dilimi ısırırım."
+          }
+        ],
+        diagnoses: [
+          { id: "dehb_yetiskin", text: "Erişkin Dikkat Eksikliği ve Hiperaktivite Bozukluğu (DEHB)", correct: true, comment: "Harika klinik muhakeme! 12 yaş öncesi karne kayıtları, hiperfokus yetisi, motor kıpır kıpırlık ve YAB'a özgü kuruntuların yokluğu tablonun primer bir Nörogelişimsel DEHB olduğunu ispatlar." },
+          { id: "yab", text: "Yaygın Anksiyete Bozukluğu (YAB)", correct: false, comment: "Yanıltıcı etiket. YAB'da dikkat dağınıklığı felaketleştirici kaygılara ikincildir; çocukluktan beri süren hiperfokus ve motor dürtüsellik barındırmaz." },
+          { id: "bipolar_hipomani", text: "Bipolar II Bozukluk - Hipomanik Dönem", correct: false, comment: "Uyuşmuyor. DEHB ömür boyu süreğendir; hipomani gibi belirli haftalarla sınırlı epizodik kabarma değildir." },
+          { id: "sosyal_fobi", text: "Sosyal Kaygı Bozukluğu", correct: false, comment: "Alakasız. İnsanların değerlendirmesinden kaçınma yoktur." },
+          { id: "majör_depresyon", text: "Majör Depresif Bozukluk (Atipik Özellikli)", correct: false, comment: "Enerji yokluğu veya anhedoni yoktur; tam tersine ilgilendiği alanda hiperfokus vardır." },
+          { id: "okb_dusunsel", text: "Obsesif Kompulsif Bozukluk (Düşünsel Obsesyonlar)", correct: false, comment: "Zorlantılı intrizyonlar veya ritüeller mevcut değildir." },
+          { id: "uyum_bozuklugu", text: "Belirtilmemiş Uyum Bozukluğu", correct: false, comment: "Yeni bir yaşam stresi tetikleyicisi yoktur, belirtiler ilkokuldan beri devam etmektedir." }
+        ],
+        interventions: [
+          { id: "dehb_yonetici_psikiyatri", text: "Psikiyatri Konsültasyonu (Farmakoterapi) + Yürütücü İşlev & Zaman Yönetimi Becerileri", correct: true, comment: "Kanıta dayalı altın standart! Yetişkin DEHB'sinde dopaminerjik regülasyon için medikal değerlendirme ve çalışma alanı/ajanda yapılandırması uygulanır." },
+          { id: "derin_nefes_gevseme", text: "Yalnızca Kaygı Gidermeye Yönelik Progresif Kas Gevşetme ve Nefes Egzersizi", correct: false, comment: "Yetersiz. Dopaminerjik regülasyon sorununu salt kas gevşetmeyle çözmeye çalışmak hastayı daha da sabırsız kılar." },
+          { id: "psikanalitik_ruya", text: "Haftada 3 Gün Serbest Çağrışım ve Rüya Analizi", correct: false, comment: "Nörogelişimsel yürütücü işlev yetersizliğine çözüm üretmez." },
+          { id: "duygudurum_dengeleyici", text: "Duygudurum Dengeleyici (Lityum) Monoterapisi", correct: false, comment: "Yanlış farmakolojik hedef; hastada bipolar epizod yoktur." },
+          { id: "sosyal_maruz_birakma", text: "Kademeli Sosyal Maruz Bırakma (In-vivo Exposure)", correct: false, comment: "Sosyal fobi olmadığı için yanlış tekniktir." },
+          { id: "katatoni_protokol", text: "Acil Benzodiazepin ile Sedasyon Protokolü", correct: false, comment: "Aşırı ve endike olmayan riskli yaklaşım." },
+          { id: "uyku_kisitlama", text: "Uyku Kısıtlama Terapisi", correct: false, comment: "Danışanın sorunu uyku değil, gün içi yürütücü dikkat regülasyonudur." }
+        ]
+      },
+
+      // VAKA 3: Erişkin Otizm Spektrumu (Asperger) vs. Sosyal Kaygı
+      {
+        id: 3,
+        tag: "DOSYA #2026-03",
+        name: "Deniz Meriç",
+        meta: "25 Yaş • Yazılım Güvenliği Uzmanı",
+        speech: "İnsanlarla bir aradayken ne konuşacağımı bilemiyorum. Gözlerine bakmak fiziksel olarak canımı yakıyor. Şirketteki İK uzmanı 'Sosyal fobin var, topluluk önünde konuşma eğitimi al' dedi ama sorun bu değil gibi.",
+        avatar: `
+          <svg viewBox="0 0 100 100" class="w-24 h-24 drop-shadow">
+            <circle cx="50" cy="50" r="46" fill="#141a24" stroke="#253549" stroke-width="2"/>
+            <rect x="28" y="24" width="44" height="24" rx="6" fill="#1e293b"/>
+            <circle cx="50" cy="46" r="21" fill="#e8c2ad"/>
+            <line x1="38" y1="44" x2="44" y2="44" stroke="#1e293b" stroke-width="2.5"/>
+            <line x1="56" y1="44" x2="62" y2="44" stroke="#1e293b" stroke-width="2.5"/>
+            <line x1="44" y1="56" x2="56" y2="56" stroke="#4a2e2b" stroke-width="2"/>
+            <path d="M24 90 C28 70 36 67 50 67 C64 67 72 70 76 90 Z" fill="#2d3748"/>
+          </svg>
+        `,
+        questions: [
+          {
+            q: "İnsanların yüz ifadelerinden veya ses tonlarındaki kinayeden ne hissettiklerini anlamakta zorlanır mısınız?",
+            a: "Evet! İnsanlar bana bir şey söylediğinde kinaye mi yapıyor yoksa gerçek mi söylüyor hiç anlamıyorum. Bütün kuralları kitaplardan ezberlemem gerekti."
+          },
+          {
+            q: "Topluluk önünde konuşurken 'Beni yargılayacaklar, rezil olacağım' şeklinde bir korkunuz var mı?",
+            a: "Hayır, insanların benim hakkımda ne düşündüğü beni pek kaygılandırmaz. Ben sadece kalabalık ortamlardaki parlak floresan ışıklardan ve uğultulardan aşırı yoruluyorum."
+          },
+          {
+            q: "Çok tutkuyla bağlı olduğunuz belirli bir hobi veya araştırma konusu var mı?",
+            a: "12 yaşımdan beri dünya demir yolu sinyalizasyon sistemlerini inceliyorum. Saatlerce hiç sıkılmadan tren hatlarının mimarisini ezbere çizebilirim."
+          },
+          {
+            q: "Günlük rutinleriniz aniden bozulduğunda nasıl tepki verirsiniz?",
+            a: "Kahvemi her sabah aynı kupada içmezsem ya da işe gittiğim güzergah değişirse içimde inanılmaz bir huzursuzluk ve kilitlenme oluyor."
+          }
+        ],
+        diagnoses: [
+          { id: "otizm_spektrum", text: "Otizm Spektrum Bozukluğu (Erişkin / Destek İhtiyacı Düzey 1 - Asperger)", correct: true, comment: "Üst düzey klinik formülasyon! Sosyal Fobide sosyal ipuçları tam anlaşılır ama yargılanma korkusu ketler. Deniz'de ise zihin kuramı güçlüğü, duyusal aşırı yüklenme (sensory overload), aynılıkta ısrar ve özel ilgi alanı mevcuttur." },
+          { id: "sosyal_fobi", text: "Sosyal Kaygı Bozukluğu (Sosyal Fobi)", correct: false, comment: "Hatalı teşhis. Sosyal fobisi olan biri kinayeyi gayet iyi anlar; rezil olmaktan korkar. Demir yolu sinyalizasyonu ve floresan ışık intoleransı sosyal fobi değildir." },
+          { id: "sizoid", text: "Şizoid Kişilik Bozukluğu", correct: false, comment: "Uyuşmuyor. Şizoid yapıda ilişkisizlikten keyif alma varken burada iletişim kurallarını kitaplardan ezberleme çabası ve duyusal aşırı yüklenme vardır." },
+          { id: "sizotipal", text: "Şizotipal Kişilik Bozukluğu", correct: false, comment: "Büyüsel düşünce, batıl inançlar veya referans fikirleri yoktur." },
+          { id: "okb_simetri", text: "Obsesif Kompulsif Bozukluk (Simetri Tipi)", correct: false, comment: "Rutinlerdeki aynılık arayışı OKB kompulsiyonu değil, otistik spektrum regülasyonudur." },
+          { id: "genel_kaygi", text: "Yaygın Anksiyete Bozukluğu", correct: false, comment: "Temel zorluk sosyal biliş ve duyusal nörolojidir, genel evham değildir." },
+          { id: "paranoid_kisilik", text: "Paranoid Kişilik Bozukluğu", correct: false, comment: "Kötülük görme veya komplo şüpheciliği yoktur." }
+        ],
+        interventions: [
+          { id: "otizm_psikoegitim", text: "Nöroçeşitlilik (Neurodiversity) Odaklı Psikoğitim, Duyusal Düzenleme & Sosyal İletişim Becerileri", correct: true, comment: "Kanıta dayalı doğru yaklaşım! Danışanın otistik kimliğini anlamlandırması, duyusal yüklenmeyi azaltacak kulaklık/ışık çözümleri ve tükenmişliği önleyici stratejiler uygulanmalıdır." },
+          { id: "maruz_birakma_sosyal", text: "Zorla Kalabalık Partilere ve Topluluklara Sokarak Sosyal Maruz Bırakma (In-vivo Exposure)", correct: false, comment: "Zararlı müdahale. Nörogelişimsel duyusal hassasiyeti olan bir bireye zorlayıcı maruz bırakma uygulamak 'otistik tükenmeye' (meltdown) yol açar." },
+          { id: "bilişsel_carpitma_fobi", text: "Sosyal Rezil Olma Bilişsel Çarpıtmalarını Düzeltmeye Yönelik BDT", correct: false, comment: "Danışanın sorunu rezil olma kaygısı değil, nörobilişsel zihin kuramı ve duyusal regülasyondur." },
+          { id: "antipsikotik_yuksek", text: "Şizotipal Belirtiler Nedeniyle Yüksek Doz Tipik Antipsikotik Başlanması", correct: false, comment: "Ağır bir hekimlik ve klinik hatası." },
+          { id: "sosyal_beceri_cezalandirma", text: "Yüz İfadelerini Doğru Yapamadığında İtici Uyaran Kullanımı", correct: false, comment: "Etik dışı ve çağ dışı yaklaşım." },
+          { id: "hipnoterapi", text: "Geçmiş Yaşam Hipnoterapisi ile Çocukluk Travmasını Aramak", correct: false, comment: "Kanıta dayalı değildir; otizm travma sonucu değil doğuştandır." },
+          { id: "sadece_anksiyolitik", text: "Yalnızca Yüksek Doz Bağımlılık Yapıcı Benzodiazepin Vermek", correct: false, comment: "Duyusal ve iletişimsel nörolojiyi çözmez, sedasyon yaratır." }
+        ]
+      },
+
+      // VAKA 4: TSSB vs. Panik Bozukluk
+      {
+        id: 4,
+        tag: "DOSYA #2026-04",
+        name: "Yasin Kaya",
+        meta: "35 Yaş • Lojistik Şoförü",
+        speech: "Hocam otoyolda aniden nefesim kesiliyor, kalbim fırlayacak gibi çarpıyor. Arabayı kenara çekip tir tir titriyorum. Acil doktoru 'Panik atak geçiriyorsun' dedi.",
+        avatar: `
+          <svg viewBox="0 0 100 100" class="w-24 h-24 drop-shadow">
+            <circle cx="50" cy="50" r="46" fill="#141a24" stroke="#253549" stroke-width="2"/>
+            <path d="M26 36 Q50 16 74 36 Z" fill="#201a18"/>
+            <circle cx="50" cy="46" r="21" fill="#dfb398"/>
+            <circle cx="42" cy="44" r="2.5" fill="#1e293b"/>
+            <circle cx="58" cy="44" r="2.5" fill="#1e293b"/>
+            <path d="M42 56 Q50 52 58 56" stroke="#33211c" stroke-width="2" fill="none"/>
+            <path d="M24 90 C28 69 36 66 50 66 C64 66 72 69 76 90 Z" fill="#3b4252"/>
+          </svg>
+        `,
+        questions: [
+          {
+            q: "Bu krizler sırasında aklınızdan geçen görüntüler veya sesler var mı?",
+            a: "Fren sesi duyduğum ya da yoğun sis gördüğüm an burnuma yanık lastik kokusu geliyor. Geçen sene zincirleme kazada yanımdaki arkadaşımın sıkıştığı o anı tekrar yaşıyor gibi oluyorum."
+          },
+          {
+            q: "Geceleri rüyalarınız ve uykularınız nasıl?",
+            a: "Haftada 3-4 gece kan ter içinde kabuslarla uyanıyorum. Arabanın içinde sıkışıp yandığımı görüyorum."
+          },
+          {
+            q: "Kaza sonrasında duygusal olarak kendinizi nasıl hissediyorsunuz?",
+            a: "Eşime ve çocuklarıma karşı içimde sanki hiçbir duygu kalmadı, donup kaldım. Eskiden çok neşeliydim, şimdi dünyaya camın arkasından bakıyor gibiyim."
+          },
+          {
+            q: "Kriz anları sadece araba kullanırken mi oluyor?",
+            a: "Sadece arabada değil, TV'de kaza haberi görsem ya da arkamda biri ani korna çalsa bile aynı dehşet anına ışınlanıyorum."
+          }
+        ],
+        diagnoses: [
+          { id: "tssb", text: "Travma Sonrası Stres Bozukluğu (TSSB)", correct: true, comment: "Kusursuz ayırıcı tanı! Çarpıntı panik atağı taklit etse de; flashback'ler, yanık lastik kokusu intrizyonu, kabuslar ve duygusal küntleşme tablonun travma kökenli olduğunu kanıtlar." },
+          { id: "panik_primer", text: "Primer Panik Bozukluk (Agorafobili)", correct: false, comment: "Eksik teşhis. Panik bozuklukta kaza intrizyonu, yanık kokusu flashback'i ve travmatik kabuslar yer almaz." },
+          { id: "spesifik_fobi_arac", text: "Spesifik Fobi (Yalnızca Araç Sürme Fobisi)", correct: false, comment: "Yetersiz. Korna sesinde irkilme, duygusal küntleşme ve kabuslar genel bir travma sendromudur." },
+          { id: "yab", text: "Yaygın Anksiyete Bozukluğu", correct: false, comment: "Ağır bir kaza öyküsü ve disosiyatif yeniden yaşantılamalar genel kuruntuyla açıklanamaz." },
+          { id: "somatik_semptom", text: "Somatik Semptom Bozukluğu", correct: false, comment: "Danışanın sorunu açıklanamayan bir ağrı değil, travmatik intrizyonlardır." },
+          { id: "majör_depresyon", text: "Majör Depresif Bozukluk (Psikotik Özellikli)", correct: false, comment: "Flashback deneyimi psikotik hezeyan değil, klasik travma intrizyonudur." },
+          { id: "uyum_bozuklugu_kaygi", text: "Kaygılı Duygudurumlu Uyum Bozukluğu", correct: false, comment: "Ağır zincirleme kaza ve ölüm travması TSSB düzeyindedir; uyum bozukluğu sınırlarını aşmıştır." }
+        ],
+        interventions: [
+          { id: "emdr_tssb", text: "Travma Odaklı BDT veya EMDR (Göz Hareketleriyle Duyarsızlaştırma ve Yeniden İşleme)", correct: true, comment: "Kanıta dayalı altın standart! Travmatik kaza anısının bilateral uyarım veya travma odaklı maruz bırakma yoluyla desensitize edilmesi gerekir." },
+          { id: "panik_nefes", text: "Yalnızca Kese Kağıdına Soluma ve Hiperventilasyon Nefes Egzersizi", correct: false, comment: "Yetersiz. Alttaki işlenmemiş travmatik kaza anısı çözümlenmeden nefes egzersizi kalıcı iyileşme sağlamaz." },
+          { id: "araba_yasaklama", text: "Hastaya Bir Daha Asla Araba Kullanmamasını Tavsiye Etmek", correct: false, comment: "Kaçınma davranışını pekiştirir ve travmayı kronikleştirir." },
+          { id: "klasik_analiz", text: "Çocukluk Dönemi Ödipal Çatışmalarını İnceleyen Psikanaliz", correct: false, comment: "Akut travma intrizyonlarında odak travmatik anı olmalıdır." },
+          { id: "elektrokonvulsif", text: "Acil EKT (Elektroşok Terapisi) Uygulanması", correct: false, comment: "Bu vaka için tamamen uygunsuz ve endikasyonsuzdur." },
+          { id: "otonom_biofeedback", text: "Yalnızca Otonom Deri İletkenliği Biofeedback Cihazı", correct: false, comment: "Travmatik kognitif yeniden işlemeyi sağlamaz." },
+          { id: "sedatif_monoterapi", text: "Yalnızca Yüksek Doz Uyku Hapı ile Semptomu Bastırmak", correct: false, comment: "Gündüz flashback'lerini ve duygusal küntleşmeyi çözmez." }
+        ]
+      },
+
+      // VAKA 5: Somatik Semptom Bozukluğu vs. Hastalık Kaygısı
+      {
+        id: 5,
+        tag: "DOSYA #2026-05",
+        name: "Gülseren Hanım",
+        meta: "50 Yaş • Ev Hanımı",
+        speech: "Hocam 1 yıldır sırtımda, midemde ve bacaklarımda dayanılmaz bir yanma ve batma var. Doktor doktor gezdim, 'Psikolojik' deyip eve yolluyorlar. Canım bu kadar yanarken nasıl psikolojik olabilir?",
+        avatar: `
+          <svg viewBox="0 0 100 100" class="w-24 h-24 drop-shadow">
+            <circle cx="50" cy="50" r="46" fill="#141a24" stroke="#253549" stroke-width="2"/>
+            <path d="M26 38 C26 24 74 24 74 38 Z" fill="#544038"/>
+            <circle cx="50" cy="46" r="21" fill="#deb498"/>
+            <circle cx="41" cy="44" r="2.2" fill="#2d221c"/>
+            <circle cx="59" cy="44" r="2.2" fill="#2d221c"/>
+            <path d="M43 56 Q50 53 57 56" stroke="#4a2a22" stroke-width="2" fill="none"/>
+            <path d="M24 90 C28 70 38 66 50 66 C62 66 72 70 76 90 Z" fill="#4d3b4a"/>
+          </svg>
+        `,
+        questions: [
+          {
+            q: "Yapılan tıbbi tetkikler (MR, endoskopi, romatoloji paneli) ne gösterdi?",
+            a: "Üç farklı üniversite hastanesine yattım. Tüm tahliller, biyopsiler ve MR'lar tertemiz çıktı."
+          },
+          {
+            q: "Sizi en çok korkutan şey kanser olmak gibi bir hastalık teşhisi mi, yoksa ağrının kendisi mi?",
+            a: "Kanserden falan korkmuyorum evladım, tahliller temiz zaten. Beni tüketen şey bu bitmek bilmeyen gerçek fiziksel acı ve sızı!"
+          },
+          {
+            q: "Bu ağrılar başladığında hayatınızda neler oluyordu?",
+            a: "Büyük oğlum iflas edip eşiyle ayrıldı, küçük kızım da yurt dışına taşındı. Evde yalnız kaldım, kimse sesimi duymaz oldu."
+          },
+          {
+            q: "Günlük vaktinizin ne kadarını bu ağrıları düşünerek veya tedavi arayarak geçiriyorsunuz?",
+            a: "Sabahtan akşama kadar ağrının nerede olduğunu takip ediyorum. Ağrıdan dolayı hiçbir komşuma gidemez oldum."
+          }
+        ],
+        diagnoses: [
+          { id: "somatik_semptom", text: "Somatik Semptom Bozukluğu (Belirgin Ağrı İle Seyreden)", correct: true, comment: "Çok isabetli bir ayırıcı tanı! Hastalık Kaygısı Bozukluğunda ortada ciddi bir ağrı yoktur, kanser olma kuruntusu vardır. Burada ise organik nedeni bulunamayan ancak hastanın bizzat hissettiği fiziksel ağrılar ve orantısız kognitif meşguliyet vardır." },
+          { id: "hastalik_kaygisi", text: "Hastalık Kaygısı Bozukluğu (Hipokondriyazis)", correct: false, comment: "Yanıltıcı etiket. Hastalık kaygısında belirgin fiziksel acı yoktur; 'ya hastaysam' korkusu vardır. Danışan kanserden korkmadığını, doğrudan acıdan kıvrandığını belirtmektedir." },
+          { id: "simulasyon", text: "Yapay Bozukluk / Simülasyon (Malingering)", correct: false, comment: "Ağır bir hata! Danışan rol yapmamaktadır; hissettiği acı nörobiyolojik olarak gerçektir." },
+          { id: "panik_bozukluk", text: "Panik Bozukluk", correct: false, comment: "Akut 10-15 dakikalık ölüm korkulu nöbetler değil, 1 yıldır süren kronik yaygın ağrı söz konusudur." },
+          { id: "fibromiyalji_primer", text: "Primer Fibromiyalji Sendromu (Yalnızca Romatolojik)", correct: false, comment: "Romatoloji panelleri temizdir ve tabloya yoğun orantısız psikolojik meşguliyet eşlik etmektedir." },
+          { id: "konversiyon", text: "Dönüştürme (Konversiyon) Bozukluğu", correct: false, comment: "Uyuşmuyor; felç, körlük, afoni gibi nörolojik kayıplar değil, yaygın ağrı tablosudur." },
+          { id: "okb_soma", text: "Obsesif Kompulsif Bozukluk", correct: false, comment: "Büyüsel ritüeller veya ego-distonik saçma obsesyonlar yoktur." }
+        ],
+        interventions: [
+          { id: "somatik_bdt_validasyon", text: "Ağrının Gerçekliğini Kabul Eden Validasyon + BDT Temelli Beden Odaklı Farkındalık & Duygu İfadesi", correct: true, comment: "Klinik ustalık! Hastaya asla 'Ağrın kafanda uyduruyorsun' denmemelidir. Ağrının gerçekliği valide edilerek ifade edilemeyen ilişkisel yalnızlık ve duygusal yükler çalışılmalıdır." },
+          { id: "surekli_mr", text: "Danışan Rahatlasın Diye Her Ağrıda Yeni Bir MR ve Endoskopi İstemek", correct: false, comment: "Semptomu ve doktor gezme döngüsünü pekiştirir." },
+          { id: "agrin_yalan", text: "Hastaya 'Tahlillerin temiz, hiçbir şeyin yok numara yapıyorsun' Demek", correct: false, comment: "Terapötik ilişkiyi tamamen yıkar ve hastanın direncini artırır." },
+          { id: "narkotik_analjezik", text: "Yüksek Doz Bağımlılık Yapıcı Narkotik Ağrı Kesici Önermek", correct: false, comment: "Psikojenik/somatik ağrıda bağımlılık yaratır, sebebi çözmez." },
+          { id: "tam_yatak_istirahati", text: "Hastaya Yataktan Hiç Çıkmamasını Tavsiye Etmek", correct: false, comment: "İşlevsellik kaybını derinleştirir ve kas atrofisini tetikler." },
+          { id: "bilişsel_meydan_okuma_sert", text: "Ağrının Saçma Olduğunu Sokratik Yolla İspatlamaya Çalışmak", correct: false, comment: "Ağrı subjektif bir algıdır; mantıkla çürütülemez, valide edilmelidir." },
+          { id: "sadece_akupunktur", text: "Yalnızca Alternatif Tıp / Akupunktur Seanslarına Yönlendirmek", correct: false, comment: "Alttaki psikososyal yalnızlık ve ayrılık dinamiklerini çözmez." }
+        ]
+      },
+
+      // VAKA 6: Kariyer/Yaşam Dönemi Değişimi - Patoloji Yok
+      {
+        id: 6,
+        tag: "DOSYA #2026-06",
+        name: "Tolga Erdem",
+        meta: "38 Yaş • Kıdemli Mimar",
+        speech: "Hocam son birkaç aydır sabahları yataktan kalkarken 'Ben bu gökdelenleri neden çiziyorum, hayatımın amacı ne?' diye sorguluyorum. Bir tükenmişlik ya da depresyon testi mi yapmamız lazım?",
+        avatar: `
+          <svg viewBox="0 0 100 100" class="w-24 h-24 drop-shadow">
+            <circle cx="50" cy="50" r="46" fill="#141a24" stroke="#253549" stroke-width="2"/>
+            <path d="M28 36 Q50 16 72 36 Z" fill="#2d221c"/>
+            <circle cx="50" cy="46" r="21" fill="#e2b490"/>
+            <circle cx="42" cy="44" r="2.3" fill="#1e293b"/>
+            <circle cx="58" cy="44" r="2.3" fill="#1e293b"/>
+            <line x1="44" y1="56" x2="56" y2="56" stroke="#2d221c" stroke-width="2"/>
+            <path d="M24 90 C28 69 36 66 50 66 C64 66 72 69 76 90 Z" fill="#2c3e50"/>
+          </svg>
+        `,
+        questions: [
+          {
+            q: "Uyku düzeniniz, kilonuz ve biyolojik enerjinizde gerileme var mı?",
+            a: "Hayır, uykum gayet düzenli, haftada 3 gün koşuyorum. Fiziksel enerjimde bir düşüş yok."
+          },
+          {
+            q: "Hafta sonları ya da iş dışındaki aktivitelerinizde keyif alabiliyor musunuz?",
+            a: "Evet, kızımla marangozluk yaparken veya arkadaşlarımla felsefe konuşurken çok keyif alıyorum. Sorun genel bir zevksizlik değil, kariyerimin anlamını yitirmesi."
+          },
+          {
+            q: "İş yerinde mobbing, aşırı çalışma saatleri veya tükenme hissediyor musunuz?",
+            a: "İş saatlerim normal, şirket bana çok değer veriyor. Aslında dışarıdan bakan biri 'Daha ne istiyorsun?' der. Ama ben artık sadece para kazanmak değil, dünyaya anlamlı bir iz bırakmak istiyorum."
+          },
+          {
+            q: "Kendinizi yetersiz veya değersiz hissediyor musunuz?",
+            a: "Asla. Yeteneklerime güveniyorum. Sadece hayatımın ikinci yarısında ne yapmak istediğimi netleştirmek istiyorum."
+          }
+        ],
+        diagnoses: [
+          { id: "normatif_varolus", text: "Normatif Yaşam Evresi Uyumu & Varoluşsal Kariyer Sorgulaması (Patoloji Yok)", correct: true, comment: "Harika bir değerlendirme! Her sorgulama depresyon veya tükenmişlik değildir. Danışan sağlıklı bir birey olarak Frankl tarzı bir 'anlam arayışı' içindedir; gereksiz patoloji etiketi vurulmamalıdır." },
+          { id: "burnout", text: "Mesleki Tükenmişlik Sendromu (Burnout)", correct: false, comment: "Uyuşmuyor. Tükenmişlikte aşırı çalışma ve kronik fizyolojik enerji çöküşü vardır; Tolga Bey'de bu tükenme tablosu yoktur." },
+          { id: "mdd", text: "Hafif Düzey Majör Depresif Bozukluk", correct: false, comment: "Hatalı tanı. Anhedoni, biyolojik çöküş veya değersizlik hissi yoktur." },
+          { id: "distimi", text: "Distimik Bozukluk (Kronik Çökkünlük)", correct: false, comment: "Genel çökkün duygudurum veya düşük benlik saygısı mevcut değildir." },
+          { id: "uyum_bozuklugu_is", text: "Mesleki Uyum Bozukluğu", correct: false, comment: "İşlevsellikte belirgin bir bozulma veya klinik düzeyde kaygı/depresyon saptanmamıştır." },
+          { id: "orta_yas_krizi_patolojik", text: "Patolojik Kimlik Disosiasyonu", correct: false, comment: "Aşırı ve temelsiz bir patolojizasyon." },
+          { id: "narsisistik_dekompansasyon", text: "Narsisistik Zedelenme ve Çöküş", correct: false, comment: "Büyüklenmeci beklentiler veya kırılgan narsisizm bulguları yoktur." }
+        ],
+        interventions: [
+          { id: "varoluscu_kocluk", text: "Varoluşçu Terapi / Değerler Odaklı Kabul ve Kararlılık Terapisi (ACT) & Kariyer Danışmanlığı", correct: true, comment: "En uygun sağaltım yolu! Danışanın temel değerleri netleştirilmeli, hayatının bu yeni evresinde onu neyin tatmin edeceği yapılandırılmalıdır." },
+          { id: "farmakoterapi_antidepresan", text: "Hemen Antidepresan Reçete Edilmesi", correct: false, comment: "Klinik hata. Anlam arayışı içinde olan sağlıklı bir zihni kimyasalla uyuşturmak felsefi olgunlaşmayı engeller." },
+          { id: "isi_hemen_birak", text: "Danışana Ertesi Gün İstifa Etmesini Söylemek", correct: false, comment: "Dürtüsel ve riskli bir yönlendirme; terapistin görevi hayat kararları almak değildir." },
+          { id: "depresyon_davranissal", text: "Yataktan Çıkamadığı Varsayımıyla Davranışsal Aktivasyon Çizelgesi", correct: false, comment: "Danışan zaten haftada 3 gün koşan ve kızıyla marangozluk yapan aktif biridir." },
+          { id: "maruz_birakma", text: "Gökdelen Çizimlerine Karşı Duyarsızlaştırma Maruz Bırakması", correct: false, comment: "Ortada bir fobi yoktur, yanlış hedeftir." },
+          { id: "aile_terapisi_zorunlu", text: "Eşini de Çağırıp Boşanma Protokolü Başlatmak", correct: false, comment: "Aile içi bir kriz belirtilmemiştir." },
+          { id: "elektroşok", text: "Dirençli Varoluşsal Çöküş Nedeniyle EKT Önerisi", correct: false, comment: "Tamamen kabul edilemez ve tehlikeli bir hata." }
+        ]
+      },
+
+      // VAKA 7: Hastalık Kaygısı vs. OKB
+      {
+        id: 7,
+        tag: "DOSYA #2026-07",
+        name: "Ece Demir",
+        meta: "27 Yaş • Araştırma Görevlisi",
+        speech: "Hocam zihnim hiç susmuyor. Boğazımda ufak bir gıcıklanma olsa 'Gırtlak kanseri oldum' diye günlerce PubMed'de makale tarıyorum. Arkadaşlarım 'Sen OKB'sin' diyor ama ben temizlik takıntısı yaşamıyorum.",
+        avatar: `
+          <svg viewBox="0 0 100 100" class="w-24 h-24 drop-shadow">
+            <circle cx="50" cy="50" r="48" fill="#1e293b"/>
+            <circle cx="50" cy="42" r="18" fill="#cbd5e1"/>
+            <path d="M38 36L45 38" stroke="#334155" stroke-width="2"/>
+            <path d="M62 36L55 38" stroke="#334155" stroke-width="2"/>
+            <circle cx="43" cy="42" r="2" fill="#1e293b"/>
+            <circle cx="57" cy="42" r="2" fill="#1e293b"/>
+            <path d="M44 52C47 50 53 50 56 52" stroke="#334155" stroke-width="1.8"/>
+            <path d="M28 84C28 69 38 66 50 66 C62 66 72 69 72 84" fill="#334155"/>
+          </svg>
+        `,
+        questions: [
+          {
+            q: "Bu şüpheler geldiğinde bir ritüeliniz veya büyüsel bir hareketiniz var mı?",
+            a: "Sihirli bir ritüelim yok. Sadece boynumdaki lenf bezlerini saatlerce elle muayene ediyorum ve aileme sürekli 'Boğazım şiş mi, rengim soluk mu?' diye sorup onay arıyorum."
+          },
+          {
+            q: "Doktor kontrolleriniz ve tahlilleriniz nasıl sonuçlanıyor?",
+            a: "Son 6 ayda 4 farklı KBB ve onkoloji uzmanına gittim. Bütün tomografiler ve tahliller tertemiz çıktı. Ama doktor 'temiz' dedikten 2 gün sonra şüpheler yeniden başlıyor."
+          },
+          {
+            q: "Bedeninizde şiddetli dayanılmaz bir ağrı hissediyor musunuz?",
+            a: "Hayır, belirgin bir ağrım yok. Beni mahveden şey hafif bir yutkunma hissini zihnimde ölümcül bir tümör olarak felaketleştirmem."
+          },
+          {
+            q: "Bu araştırmalar gününüzün ne kadarını alıyor?",
+            a: "Tezimi yazamıyorum, günde en az 4 saat tıp sitelerinde semptom eşleştiriyorum (siberkondri)."
+          }
+        ],
+        diagnoses: [
+          { id: "hastalik_kaygisi", text: "Hastalık Kaygısı Bozukluğu (Illness Anxiety Disorder)", correct: true, comment: "Mükemmel ayırıcı tanı! Çevresi OKB sansa da ego-distonik büyüsel ritüeller yoktur. Beden taraması (body checking), hekim gezme ve onay arama (reassurance) ile seyreden tablo net bir Hastalık Kaygısıdır." },
+          { id: "okb_soma", text: "Obsesif Kompulsif Bozukluk (Soma Tipi Kompulsiyonlar)", correct: false, comment: "Eksik analiz. Büyüsel nötralizasyon veya bulaşma korkusu yoktur; odak doğrudan tıbbi bir hastalığın dehşetidir." },
+          { id: "somatik_semptom", text: "Somatik Semptom Bozukluğu", correct: false, comment: "Uyuşmuyor. Danışanda açıklanamayan şiddetli bir ağrı tablosu yoktur, 'ya hastaysam' korkusu vardır." },
+          { id: "panik_bozukluk", text: "Panik Bozukluk (Agorafobisiz)", correct: false, comment: "Krizler 15 dakikalık akut taşikardi nöbeti şeklinde değil, gün boyu süren siberkondri araştırmaları şeklindedir." },
+          { id: "deluzyonel_somatik", text: "Sanrılı Bozukluk (Somatik Tip)", correct: false, comment: "İçgörüsü tamamen kaybolmamıştır; 'biliyorum abartıyorum ama durduramıyorum' demektedir." },
+          { id: "yab", text: "Yaygın Anksiyete Bozukluğu", correct: false, comment: "Kaygının odağı genele değil, spesifik olarak bedensel hastalıklara kilitlenmiştir." },
+          { id: "kanser_fobisi", text: "Yalnızca Basit Bir Fobi", correct: false, comment: "Günde 4 saat hekim gezme ve beden kontrolü fobi sınırlarını aşan bir klinik tablodur." }
+        ],
+        interventions: [
+          { id: "bdt_guvence_sinirlama", text: "BDT: Onay Arama (Reassurance) & Beden Kontrolünün Kademeli Durdurulması + Siberkondri Sınırlaması", correct: true, comment: "Kanıta dayalı protokol! Sürekli doktora gitme ve internette semptom arama davranışları kısıtlanmalı, bedensel duyumların felaketleştirilmesine yönelik bilişsel yeniden çerçeveleme yapılmalıdır." },
+          { id: "guvence_vermek", text: "Terapistin 'Korkma hiçbir şeyin yok, kanser değilsin' Diyerek Güvence Vermesi", correct: false, comment: "Terapötik hata! Terapistin güvence vermesi onay arama döngüsünü besler ve semptomu kronikleştirir." },
+          { id: "erp_okb", text: "Klasik OKB Bulaşma Maruz Bırakma ve El Yıkamayı Yasaklama", correct: false, comment: "Danışanın el yıkama ritüeli yoktur; yanlış protokol." },
+          { id: "onkolojiye_sevk", text: "Şüpheleri Gitsin Diye Pet-CT ve Biyopsi İstemek", correct: false, comment: "Hekim gezme döngüsüne çanak tutar." },
+          { id: "antipsikotik_depot", text: "Somatik Sanrı Teşhisiyle İntramüsküler Depot Antipsikotik Başlanması", correct: false, comment: "Sanrı olmadığı için kontrendikedir." },
+          { id: "yalnizca_masaj", text: "Boğazındaki Gerginlik İçin Yalnızca Boyun Masajı Önermek", correct: false, comment: "Bilişsel felaketleştirmeyi çözmez." },
+          { id: "psikoanalitik_regresyon", text: "Terapistin Danışana Anne Rolü Oynayarak Regrese Etmesi", correct: false, comment: "Sınır ihlali ve hatalı yaklaşım." }
+        ]
+      },
+
+      // VAKA 8: Sınırda (Borderline) Kişilik Örüntüsü vs. Bipolar II
+      {
+        id: 8,
+        tag: "DOSYA #2026-08",
+        name: "Berk Soylu",
+        meta: "24 Yaş • Sinema Bölümü Mezunu",
+        speech: "Hocam benim duygularım gün içinde hız treni gibi. Sabah dünyayı fethedecek gibi neşeliyken, öğleden sonra sevgilim geç yazınca kendimi değersiz hissedip çıldırıyorum. Bipolar mıyım ben?",
+        avatar: `
+          <svg viewBox="0 0 100 100" class="w-24 h-24 drop-shadow">
+            <circle cx="50" cy="50" r="48" fill="#1e293b"/>
+            <circle cx="50" cy="42" r="18" fill="#cbd5e1"/>
+            <path d="M37 36C40 34 44 35 46 37" stroke="#334155" stroke-width="2"/>
+            <path d="M63 36C60 34 56 35 54 37" stroke="#334155" stroke-width="2"/>
+            <circle cx="43" cy="42" r="2" fill="#1e293b"/>
+            <circle cx="57" cy="42" r="2" fill="#1e293b"/>
+            <path d="M42 53C47 55 53 51 58 53" stroke="#334155" stroke-width="1.8"/>
+            <path d="M28 84C28 69 38 66 50 66 C62 66 72 69 72 84" fill="#334155"/>
+          </svg>
+        `,
+        questions: [
+          {
+            q: "Bu taşkınlık ve çöküş dönemleriniz günlerce veya haftalarca kesintisiz sürer mi?",
+            a: "Hayır! Birkaç saat içinde olur her şey. Sabah neşeli bir senaryo yazarken öğlen küçücük bir eleştiriyle yıkılırım, akşam ise hiçbir şey olmamış gibi bara gidebilirim."
+          },
+          {
+            q: "İlişkilerinizde partnerinizi nasıl değerlendirirsiniz?",
+            a: "Tanıştığım insan önce benim için bir melektir, kusursuzdur. Ama telefonuma 1 saat dönmeyince dünyanın en iğrenç, en zalim insanı olur. Hepsini engellerim."
+          },
+          {
+            q: "Kendinizi yalnız hissettiğinizde içinizde ne uyanır?",
+            a: "Göğsümde dipsiz bir kara delik varmış gibi dayanılmaz bir kronik boşluk hissederim. O boşluğu dindirmek için hız yapar ya da alkol alırım."
+          },
+          {
+            q: "Uyku ihtiyacınız azaldığında enerjiniz nasıl etkilenir?",
+            a: "Uykusuz kaldığımda yorgun ve tahammülsüz olurum; öyle Bipolar manideki gibi 'günde 2 saat uyudum ama enerjim taştı' durumu yaşamam."
+          }
+        ],
+        diagnoses: [
+          { id: "borderline", text: "Sınırda (Borderline) Kişilik Örgütlenmesi", correct: true, comment: "Usta düzeyinde klinik analiz! Bipolar'da duygudurum haftalar süren epizodlarla gider. Berk'te ise dakikalar içinde tetiklenen ilişkisel labilite, bölme (splitting), kronik boşluk hissi ve terk edilme hassasiyeti Borderline patolojisini işaret eder." },
+          { id: "bipolar_2", text: "Bipolar II Bozukluk (Hızlı Döngülü)", correct: false, comment: "Hatalı teşhis. Hızlı döngülü Bipolar bile yılda en az 4 epizod demektir; günde 4 kez ilişkisel tetikleyiciyle değişen ruh hali kişilik örüntüsüdür." },
+          { id: "siklotimi", text: "Siklotimik Bozukluk", correct: false, comment: "Eksik değerlendirme. Siklotimi 2 yıllık süreğen hafif hipomanik ve depresif dönemlerdir; splitting ve kronik boşluk barındırmaz." },
+          { id: "dehb_yetiskin", text: "Erişkin DEHB (Yalnızca Dürtüsel Tip)", correct: false, comment: "Terk edilme dehşeti ve aşırı idealizasyon/değersizleştirme uçları DEHB ile açıklanamaz." },
+          { id: "histriyonik", text: "Histriyonik Kişilik Bozukluğu", correct: false, comment: "Yüzeysel dikkat çekme çabasından ziyade derin kronik boşluk ve kimlik karmaşası ön plandadır." },
+          { id: "antisosyal", text: "Antisosyal Kişilik Bozukluğu", correct: false, comment: "Vicdan azabı ve terk edilme korkusu yüksektir; antisosyal örüntüye uymaz." },
+          { id: "narsisistik", text: "Narsisistik Kişilik Bozukluğu", correct: false, comment: "Büyüklenmeci benlik yerine kronik boşluk ve parçalanmış kimlik hissi egemendir." }
+        ],
+        interventions: [
+          { id: "dbt_diyalektik", text: "Diyalektik Davranış Terapisi (DBT): Duygu Düzenleme, Kriz Toleransı & Kişilerarası Etkililik Becerileri", correct: true, comment: "Dünyaca kabul edilmiş kanıta dayalı altın standart! Borderline örgütlenmede duygu regülasyonu ve dürtü kontrolü için DBT uygulanmalıdır." },
+          { id: "sadece_lityum", text: "Yalnızca Lityum Başlayıp Terapi Yapmamak", correct: false, comment: "Yetersiz. Kişilik organizasyonundaki splitting ve terk edilme travması ilaçla çözülemez." },
+          { id: "klasik_bdt_mantik", text: "Klasik BDT ile 'Sevgilin Geç Yazınca Neden Kızıyorsun?' Diyerek Mantık Münazarası Yapmak", correct: false, comment: "Danışan geçersizleştirilmiş hisseder ve terapiyi terk eder (drop-out)." },
+          { id: "yalnizca_maruz_birakma", text: "Terk Edilme Korkusuna Karşı Sevgilisine Zorla Mesaj Attırmamak", correct: false, comment: "Kriz becerisi öğretilmeden maruz bırakma hastada kendine zarar verme davranışını tetikler." },
+          { id: "aile_dizimi", text: "Kök Aile Dizimi Yaparak Sorunu Ataların Karmasına Bağlamak", correct: false, comment: "Bilimsel ve kanıta dayalı değildir." },
+          { id: "antipsikotik_agır", text: "Düşünceleri Düzeltsin Diye Ağır Tipik Nöroleptik Başlamak", correct: false, comment: "Psikotik dekompansasyon yoktur; endike değildir." },
+          { id: "sinirsiz_ulasilabilirlik", text: "Terapistin Danışana 7/24 Şahsi Telefonunu Verip Her An Konuşması", correct: false, comment: "Terapötik çerçeveyi yıkar ve bağımlı/manipülatif krizi besler." }
+        ]
+      },
+
+      // VAKA 9: Psödodemans (Depresif Bilişsel Bozulma) vs. Alzheimer
+      {
+        id: 9,
+        tag: "DOSYA #2026-09",
+        name: "Cemil Bey",
+        meta: "68 Yaş • Emekli Mühendis (Eşiyle Geldi)",
+        speech: "Eşim beni zorla getirdi. Son 3 aydır aklım başımdan gitti, gazete okuyamıyorum, torunların adını karıştırıyorum. Galiba Alzheimer oldum, hayatım bitti.",
+        avatar: `
+          <svg viewBox="0 0 100 100" class="w-24 h-24 drop-shadow">
+            <circle cx="50" cy="50" r="48" fill="#1e293b"/>
+            <circle cx="50" cy="42" r="18" fill="#cbd5e1"/>
+            <path d="M36 34C40 34 44 36 46 38" stroke="#475569" stroke-width="2"/>
+            <path d="M64 34C60 34 56 36 54 38" stroke="#475569" stroke-width="2"/>
+            <circle cx="43" cy="42" r="1.8" fill="#1e293b"/>
+            <circle cx="57" cy="42" r="1.8" fill="#1e293b"/>
+            <line x1="43" y1="52" x2="57" y2="52" stroke="#475569" stroke-width="2"/>
+            <path d="M28 84C28 70 38 68 50 68 C62 68 72 70 72 84" fill="#334155"/>
+          </svg>
+        `,
+        questions: [
+          {
+            q: "Bu unutkanlık ve dalgınlık tam olarak ne zaman ve nasıl başladı?",
+            a: "Yaklaşık 3 ay önce birdenbire başladı. Eskiden saat gibi çalışan beynim sanki durdu."
+          },
+          {
+            q: "Test sorularına yanıt verirken ne hissediyorsunuz?",
+            a: "Doktor bana 'Bugün ayın kaçı?' dedi, 'Bilmiyorum, aklım almıyor, beni zorlamayın' dedim. Gerçekten hiç çaba sarf etmek istemiyorum."
+          },
+          {
+            q: "Eski hobileriniz, uykunuz ve iştahınız son aylarda nasıl?",
+            a: "40 yıllık maket hobim vardı, kutusunu açmıyorum. Sabah 04.30'da büyük bir iç sıkıntısıyla uyanıyorum, 6 kilo verdim."
+          },
+          {
+            q: "Bu tablodan önce yaşadığınız önemli bir kayıp oldu mu?",
+            a: "4 ay önce 45 yıllık en yakın arkadaşımı kalp krizinden kaybettim."
+          }
+        ],
+        diagnoses: [
+          { id: "psododemans", text: "Psödodemans (Depresif Bilişsel Bozulma / Yaşlılık Depresyonu)", correct: true, comment: "Mükemmel geriatrik ayırıcı tanı! Yaşlılarda depresyon sıklıkla bilişsel yıkımı taklit eden 'Psödodemans' şeklinde gelir. Hastanın bellek kusurlarından aşırı yakınması, teste ilgisizce 'bilmiyorum' demesi, ani başlangıç ve anhedoni Alzheimer'dan ayrılan kritik noktalardır." },
+          { id: "alzheimer", text: "Alzheimer Tipi Demans (Erken Evre)", correct: false, comment: "Hatalı teşhis. Gerçek Alzheimer hastası bellek açığını fark etmez veya masallamaya (konfabulasyon) çalışır; başlangıç çok sinsidir." },
+          { id: "vaskuler_demans", text: "Vasküler Demans", correct: false, comment: "Basamaklı nörolojik felç öyküsü veya iskemik lezyon belirtisi yoktur." },
+          { id: "deliryum", text: "Akut Hipoaktif Deliryum", correct: false, comment: "Uyuşmuyor. Deliryum saatler içinde bilinç dalgalanmasıyla gider; burada 3 aylık depresif bir tablo vardır." },
+          { id: "frontotemporal", text: "Frontotemporal Demans", correct: false, comment: "Karakter bozulması, disinhibisyon veya ahlaki sınır kaybı yoktur." },
+          { id: "amnezi_organik", text: "Korsakoff Sendromu / Amnezik Bozukluk", correct: false, comment: "Kronik alkol veya tiamin eksikliği tablosu yoktur." },
+          { id: "hafif_bilissel_bozukluk", text: "Hafif Bilişsel Bozukluk (MCI - Amnestik Tip)", correct: false, comment: "Melankolik depresif belirtiler tedavi edilmeden MCI denilemez." }
+        ],
+        interventions: [
+          { id: "geriatrik_antidepresan_bdt", text: "Psikiyatri Konsültasyonu (Geriatrik Antidepresan) + Davranışsal Aktivasyon & Yaşam Gözden Geçirme Terapisi", correct: true, comment: "En doğru klinik protokol! Depresyon tedavi edildiğinde hastanın bilişsel performansı ve belleği eski haline dönecektir." },
+          { id: "demans_ilaclari", text: "Doğrudan Demans İlaçları (Donepezil / Memantin) Başlamak", correct: false, comment: "Klinik hata. Depresyon tedavi edilmeden hastaya boş yere demans ilacı başlanmamalıdır." },
+          { id: "bakimevine_yerlestir", text: "Alzheimer Olduğu Gerekçesiyle Bakımevine Yerleştirmek", correct: false, comment: "Hatalı tanı yüzünden hastayı ailesinden koparan feci bir uygulama." },
+          { id: "yalnizca_bulmaca", text: "Yalnızca Gazete Bulmacası Çözmesini Söylemek", correct: false, comment: "Ağır melankolik depresyon ve intihar riski taşıyan hastayı bulmacayla oyalamak tehlikelidir." },
+          { id: "hafiza_testi_zorla", text: "Her Gün Evde Saatlerce Eşi Tarafından Hafıza Testine Tabi Tutulması", correct: false, comment: "Hastanın yetersizlik ve çaresizlik hissini daha da artırır." },
+          { id: "antipsikotik_sedasyon", text: "Gece Yüksek Doz Nöroleptik ile Uyutulması", correct: false, comment: "Bilişsel fonksiyonları daha da bozar." },
+          { id: "hipnotik_telkin", text: "Unuttuğu Anıları Hatırlatmak İçin Hipnoz Seansı", correct: false, comment: "Organik görünümlü depresyonda kanıta dayalı değildir." }
+        ]
+      },
+
+      // VAKA 10: Romantik Sürpriz Danışan (Easter Egg)
+      {
+        id: 10,
+        tag: "ÖZEL DOSYA #VIP-AŞK",
+        name: "Gizemli Danışan (Sürpriz Seans!)",
+        meta: "Sırılsıklam Âşık • Hayatının Erkeği",
+        speech: "Sayın Terapistim, seans odanıza gelmeden önce tüm savunma mekanizmalarımı DSM kriterlerine göre inceledim. Fakat kalbimdeki taşikardiye ve size olan sevgime hiçbir terapi çare olmuyor!",
+        avatar: `
+          <svg viewBox="0 0 100 100" class="w-24 h-24 drop-shadow">
+            <circle cx="50" cy="50" r="48" fill="#2b1622" stroke="#632540" stroke-width="2"/>
+            <path d="M28 35 Q50 14 72 32 Q62 20 40 24 Z" fill="#321e14"/>
+            <circle cx="50" cy="46" r="22" fill="#E8BD9F"/>
+            <path d="M37 41 Q42 37 46 40" stroke="#321e14" stroke-width="2" fill="none"/>
+            <path d="M63 41 Q58 37 54 40" stroke="#321e14" stroke-width="2" fill="none"/>
+            <circle cx="42" cy="45" r="3" fill="#e11d48"/>
+            <circle cx="58" cy="45" r="3" fill="#e11d48"/>
+            <path d="M41 55 Q50 65 59 55" stroke="#321e14" stroke-width="2.2" fill="none"/>
+            <polygon points="50,71 45,67 55,67" fill="#f43f5e"/>
+            <path d="M22 88 C26 68 36 65 50 65 C64 65 74 68 78 88 Z" fill="#1b2430"/>
+          </svg>
+        `,
+        questions: [
+          {
+            q: "Kullandığınız birincil savunma mekanizması nedir?",
+            a: "Kesinlikle yüceltme (süblimasyon)! Sana olan sevgimi formüle edebilmek için günlerdir bu 10 vakalık psikoloji simülatörünü tasarlayıp kodladım."
+          },
+          {
+            q: "Bu durum günlük işlevselliğinizi nasıl etkiliyor?",
+            a: "Sürekli 'Acaba bugün seansları nasıl geçti, onu nasıl mutlu edebilirim?' düşüncesiyle zihnimin tamamı rezerve edilmiş durumda."
+          },
+          {
+            q: "Terapötik çerçeveyi korumak için önerdiğiniz zorunlu protokol nedir?",
+            a: "Seansı hemen kapatıp baş başa leziz bir akşam yemeğine çıkmak, sıcacık bir kahve içmek ve sana sımsıkı sarılmak!"
+          }
+        ],
+        diagnoses: [
+          { id: "love_chronic", text: "Ağır ve İflah Olmaz Aşk Vakası (F63.9)", correct: true, comment: "Dünyanın en tatlı teşhisi!" },
+          { id: "love_tachycardia", text: "Akut Romantik Taşikardi (Gözlerine Bakınca Kalp Çarpıntısı Sendromu)", correct: true, comment: "Kesinlikle doğru tanı!" },
+          { id: "love_forever", text: "Ömür Boyu Birlikte Yaşlanma Sendromu", correct: true, comment: "Yüzde yüz isabetli klinik formülasyon!" },
+          { id: "love_dopamine", text: "Durdurulamayan Oksitosin & Dopamin Fırtınası", correct: true, comment: "Biyokimyasal olarak tamamen kanıtlandı!" },
+          { id: "love_sweetheart", text: "Dünyanın En Şanslı Adamı Sendromu", correct: true, comment: "Çünkü hayatında sen varsın!" },
+          { id: "love_attachment", text: "Sonsuz ve Güvenli Romantik Bağlanma", correct: true, comment: "Bowlby bile bu aşka imza atardı!" }
+        ],
+        interventions: [
+          { id: "dinner_protocol", text: "Acil Baş Başa Akşam Yemeği Terapisi & Sımsıkı Sarılma Protokolü", correct: true, comment: "Reçete onaylandı! Şimdi seansı kapatıp randevuya çıkma zamanı." },
+          { id: "forever_love", text: "Ömür Boyu El Ele Yürüme ve Sonsuz Sevgi Yaklaşımı", correct: true, comment: "Kabul edildi!" },
+          { id: "coffee_protocol", text: "Sıcak Bir Kahve Eşliğinde Göz Göze Bakışma Seansı", correct: true, comment: "Harika bir terapötik plan!" },
+          { id: "vacation_protocol", text: "Hafta Sonu İçin Romantik Bir Kaçamak Planlamak", correct: true, comment: "Hemen takvime işlenmeli!" },
+          { id: "kiss_protocol", text: "Günde Minimum 100 Defa Seni Seviyorum Deme Tedavisi", correct: true, comment: "Eksiksiz uygulanacaktır!" }
+        ]
+      }
+    ];
+
+    // OYUN DURUMU
+    let currentCaseIdx = 0;
+    let score = 0;
+    let answeredQuestions = new Set();
+
+    // DOM ELEMENTLERİ
+    const caseCounter = document.getElementById("case-counter");
+    const totalScoreDisplay = document.getElementById("total-score");
+    const caseTag = document.getElementById("caseTag");
+    const clientAvatar = document.getElementById("client-avatar");
+    const clientName = document.getElementById("client-name");
+    const clientMeta = document.getElementById("client-meta");
+    const clientSpeech = document.getElementById("client-speech");
+    const replyBox = document.getElementById("replyBox");
+    const replyText = document.getElementById("replyText");
+    const questionsContainer = document.getElementById("questions-container");
+    const questionsProgress = document.getElementById("questions-progress");
+    const caseNotesList = document.getElementById("case-notes-list");
+    const diagnosisSelect = document.getElementById("diagnosis-select");
+    const interventionSelect = document.getElementById("intervention-select");
+    const diagCount = document.getElementById("diag-count");
+    const intervCount = document.getElementById("interv-count");
+    const submitBtn = document.getElementById("submit-decision-btn");
+    const toggleDsmBtn = document.getElementById("toggle-dsm-btn");
+    const dsmGuide = document.getElementById("dsm-guide");
+
+    // Modal Elementleri
+    const feedbackModal = document.getElementById("feedback-modal");
+    const feedbackTitle = document.getElementById("feedback-title");
+    const feedbackSubtitle = document.getElementById("feedback-subtitle");
+    const feedbackContent = document.getElementById("feedback-content");
+    const feedbackIcon = document.getElementById("feedback-icon");
+    const nextCaseBtn = document.getElementById("next-case-btn");
+    const finalModal = document.getElementById("final-certificate-modal");
+
+    // Fisher-Yates Karıştırma Algoritması
+    function shuffleArray(array) {
+      const arr = [...array];
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    }
+
+    // DSM Rehber Aç/Kapa
+    toggleDsmBtn.addEventListener("click", () => {
+      dsmGuide.classList.toggle("hidden");
+    });
+
+    // VAKA YÜKLEME FONKSİYONU
+    function loadCase(index) {
+      currentCaseIdx = index;
+      answeredQuestions.clear();
+      const c = cases[index];
+
+      caseCounter.textContent = `Vaka ${index + 1} / ${cases.length}`;
+      caseTag.textContent = c.tag;
+      clientAvatar.innerHTML = c.avatar;
+      clientName.textContent = c.name;
+      clientMeta.textContent = c.meta;
+      clientSpeech.textContent = `"${c.speech}"`;
+      questionsProgress.textContent = `0 / ${c.questions.length} Soru`;
+
+      replyBox.classList.add("hidden");
+      replyText.textContent = "";
+
+      // Soruları Listele
+      questionsContainer.innerHTML = "";
+      c.questions.forEach((qObj, qIdx) => {
+        const btn = document.createElement("button");
+        btn.className = "w-full text-left p-2.5 rounded-xl bg-night-950/80 border border-night-750 hover:border-emeraldWarm-500/70 text-xs text-slate-300 transition flex items-start gap-2 cursor-pointer group";
+        btn.innerHTML = `
+          <span class="w-5 h-5 rounded-lg bg-night-900 border border-night-700 group-hover:border-emeraldWarm-400 flex items-center justify-center font-mono font-bold text-[10px] text-emeraldWarm-400 shrink-0">
+            S${qIdx + 1}
+          </span>
+          <span class="leading-snug text-slate-300 group-hover:text-slate-100 flex-1">${qObj.q}</span>
+        `;
+        btn.onclick = () => askQuestion(qIdx, btn);
+        questionsContainer.appendChild(btn);
+      });
+
+      // Tutanak defterini sıfırla
+      caseNotesList.innerHTML = `<li class="text-slate-500 italic">Soru sordukça danışanın ağzından çıkan doğrudan ifadeler seans tutanağı olarak buraya kaydedilecektir...</li>`;
+
+      // Tanı Seçeneklerini Karıştırarak (Fisher-Yates) Doldur
+      const shuffledDiagnoses = shuffleArray(c.diagnoses);
+      diagCount.textContent = `${shuffledDiagnoses.length} seçenek`;
+      diagnosisSelect.innerHTML = `<option value="" disabled selected>Bir tanı/durum belirleyin (${shuffledDiagnoses.length} seçenek)...</option>`;
+      shuffledDiagnoses.forEach(diag => {
+        const opt = document.createElement("option");
+        opt.value = diag.id;
+        opt.textContent = diag.text;
+        diagnosisSelect.appendChild(opt);
+      });
+
+      // Müdahale Seçeneklerini Karıştırarak (Fisher-Yates) Doldur
+      const shuffledInterventions = shuffleArray(c.interventions);
+      intervCount.textContent = `${shuffledInterventions.length} seçenek`;
+      interventionSelect.innerHTML = `<option value="" disabled selected>Uygun klinik protokolü seçin (${shuffledInterventions.length} seçenek)...</option>`;
+      shuffledInterventions.forEach(interv => {
+        const opt = document.createElement("option");
+        opt.value = interv.id;
+        opt.textContent = interv.text;
+        interventionSelect.appendChild(opt);
+      });
+    }
+
+    // SORU SORMA & HAM DANİŞAN YANITI TUTANAĞI
+    function askQuestion(qIdx, buttonElement) {
+      if (answeredQuestions.has(qIdx)) return;
+      answeredQuestions.add(qIdx);
+
+      const c = cases[currentCaseIdx];
+      const qObj = c.questions[qIdx];
+
+      replyBox.classList.remove("hidden");
+      replyText.textContent = qObj.a;
+
+      buttonElement.classList.add("opacity-40", "border-night-800", "cursor-not-allowed");
+      buttonElement.classList.remove("hover:border-emeraldWarm-500/70");
+
+      questionsProgress.textContent = `${answeredQuestions.size} / ${c.questions.length} Soru`;
+
+      if (answeredQuestions.size === 1) {
+        caseNotesList.innerHTML = "";
+      }
+
+      // DOĞRUDAN DANIŞANIN AĞZINDAN ÇIKAN YANIT (İpuçsuz Verbatim Tutanak)
+      const li = document.createElement("li");
+      li.className = "p-2.5 bg-night-900 border border-night-800 rounded-lg text-slate-200 text-xs flex flex-col gap-1";
+      li.innerHTML = `
+        <span class="text-[10px] font-mono text-emeraldWarm-400 font-bold flex items-center gap-1">
+          <span class="w-1.5 h-1.5 rounded-full bg-emeraldWarm-400"></span>
+          Tutanak Kaydı (S${qIdx + 1} Cevabı):
+        </span>
+        <p class="italic text-slate-300 leading-relaxed pl-2 border-l border-night-700">"${qObj.a}"</p>
+      `;
+      caseNotesList.appendChild(li);
+      caseNotesList.scrollTop = caseNotesList.scrollHeight;
+    }
+
+    // KARAR ONAYLAMA & DEĞERLENDİRME
+    submitBtn.addEventListener("click", () => {
+      const selectedDiagId = diagnosisSelect.value;
+      const selectedIntervId = interventionSelect.value;
+
+      if (!selectedDiagId || !selectedIntervId) {
+        showToast("Lütfen hem Tanı/Klinik Durum seçimini hem de Terapi Müdahalesini belirleyin!");
+        return;
+      }
+
+      const c = cases[currentCaseIdx];
+
+      // 10. Vaka Sürpriz Seans Finali
+      if (c.id === 10) {
+        triggerConfetti();
+        finalModal.classList.remove("hidden");
+        return;
+      }
+
+      const diagObj = c.diagnoses.find(d => d.id === selectedDiagId);
+      const intervObj = c.interventions.find(i => i.id === selectedIntervId);
+
+      const isDiagCorrect = diagObj && diagObj.correct;
+      const isIntervCorrect = intervObj && intervObj.correct;
+
+      let gained = 0;
+      if (isDiagCorrect) gained += 50;
+      if (isIntervCorrect) gained += 50;
+      score += gained;
+      totalScoreDisplay.textContent = score;
+
+      if (isDiagCorrect && isIntervCorrect) {
+        feedbackIcon.className = "w-10 h-10 rounded-xl bg-emeraldWarm-dim border border-emeraldWarm-500/40 text-emeraldWarm-400 flex items-center justify-center text-lg font-bold font-serif shrink-0";
+        feedbackIcon.textContent = "✓";
+        feedbackTitle.textContent = "Kusursuz Formülasyon (+100 Puan)";
+        feedbackSubtitle.textContent = "Süpervizör Onayı: Tam İsabet";
+      } else {
+        feedbackIcon.className = "w-10 h-10 rounded-xl bg-amberWarm-dim border border-amberWarm-500/40 text-amberWarm-400 flex items-center justify-center text-lg font-bold font-serif shrink-0";
+        feedbackIcon.textContent = "!";
+        feedbackTitle.textContent = `Kısmi Değerlendirme (+${gained} Puan)`;
+        feedbackSubtitle.textContent = "Süpervizör Masası İnceleme Raporu";
+      }
+
+      feedbackContent.innerHTML = `
+        <div class="space-y-2.5">
+          <div class="p-2.5 rounded-lg ${isDiagCorrect ? 'bg-emerald-950/40 border border-emerald-800/60' : 'bg-amber-950/40 border border-amber-800/60'}">
+            <span class="font-bold ${isDiagCorrect ? 'text-emeraldWarm-400' : 'text-amberWarm-400'} block mb-1">
+              Tanı Değerlendirmesi: ${isDiagCorrect ? '✓ Doğru Değerlendirme' : '✗ Yanıltıcı Çeldiriciye Takıldı'}
+            </span>
+            <p class="text-slate-300 leading-relaxed">${diagObj.comment}</p>
+          </div>
+          <div class="p-2.5 rounded-lg ${isIntervCorrect ? 'bg-emerald-950/40 border border-emerald-800/60' : 'bg-amber-950/40 border border-amber-800/60'}">
+            <span class="font-bold ${isIntervCorrect ? 'text-emeraldWarm-400' : 'text-amberWarm-400'} block mb-1">
+              Müdahale Değerlendirmesi: ${isIntervCorrect ? '✓ Uygun Terapötik Yol' : '✗ Hatalı / Riskli Protokol'}
+            </span>
+            <p class="text-slate-300 leading-relaxed">${intervObj.comment}</p>
+          </div>
+        </div>
+      `;
+
+      feedbackModal.classList.remove("hidden");
+    });
+
+    // SONRAKİ SEANSA GEÇİŞ
+    nextCaseBtn.addEventListener("click", () => {
+      feedbackModal.classList.add("hidden");
+      if (currentCaseIdx < cases.length - 1) {
+        loadCase(currentCaseIdx + 1);
+      }
+    });
+
+    // BİLDİRİM TOAST
+    function showToast(text) {
+      const toast = document.createElement("div");
+      toast.className = "fixed bottom-5 right-5 bg-night-800 text-amberWarm-400 text-xs px-4 py-2.5 rounded-xl border border-night-700 shadow-2xl z-50 font-medium";
+      toast.textContent = text;
+      document.body.appendChild(toast);
+      setTimeout(() => {
+        toast.style.opacity = "0";
+        setTimeout(() => toast.remove(), 300);
+      }, 2500);
+    }
+
+    // KONFETİ EFEKTLERİ
+    function triggerConfetti() {
+      try {
+        confetti({
+          particleCount: 160,
+          spread: 85,
+          origin: { y: 0.6 }
+        });
+      } catch (e) {}
+    }
+
+    function triggerConfettiAgain() {
+      try {
+        confetti({
+          particleCount: 180,
+          spread: 100,
+          origin: { y: 0.5 },
+          colors: ['#f43f5e', '#ec4899', '#fb7185', '#fbbf24', '#34d399']
+        });
+      } catch (e) {}
+    }
+
+    // SAYFA YÜKLENİNCE BAŞLAT
+    window.onload = function() {
+      loadCase(0);
+    };
+  </script>
+</body>
+</html>
